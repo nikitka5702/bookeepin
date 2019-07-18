@@ -25,8 +25,8 @@ class Account(models.Model):
         db_table = 'account'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date_of_open = models.DateField()
-    date_of_close = models.DateField()
+    date_of_open = models.DateField(null=True, blank=True)
+    date_of_close = models.DateField(null=True, blank=True)
     amount = models.FloatField()
     description = models.CharField(max_length=255)
     is_cash = models.BooleanField()
