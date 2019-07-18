@@ -7,6 +7,7 @@ User = get_user_model()
 
 class Category(models.Model):
     class Meta:
+        ordering = ['id']
         db_table = 'group'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)

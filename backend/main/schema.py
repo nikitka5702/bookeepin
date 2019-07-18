@@ -14,7 +14,7 @@ User = get_user_model()
 class UserType(DjangoObjectType):
     class Meta:
         model = User
-        only_fields = ('id', 'username')
+        only_fields = ('id', 'username', 'email')
 
 
 class IncomeType(DjangoObjectType):
@@ -119,7 +119,7 @@ class CreateCategory(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You must be logged in!')
-        category = Income.objects.create(
+        category = Category.objects.create(
             user=user,
             description=description,
         )
@@ -315,39 +315,45 @@ class DeleteAccount(DeleteMutation):
 
 
 class Query(graphene.ObjectType):
-    incomes = graphene.List(IncomeType)
-    expenses = graphene.List(ExpenseType)
+    incomes = graphene.List(IncomeType,
+                            start=graphene.Int(),
+                            end=graphene.Int())
+    expenses = graphene.List(ExpenseType,
+                             start=graphene.Int(),
+                             end=graphene.Int())
 
     accounts = graphene.List(AccountType)
-    categories = graphene.List(CategoryType)
+    categories = graphene.List(CategoryType,
+                               start=graphene.Int(),
+                               end=graphene.Int())
 
-    def resolve_incomes(self, info):
+    def resolve_incomes(self, info, start=0, end=5):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Income.objects.filter(account__user=user)
+        return Income.objects.filter(account__user=user).all()[start:end]
 
-    def resolve_expenses(self, info):
+    def resolve_expenses(self, info, start=0, end=5):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Expense.objects.filter(account__user=user)
+        return Expense.objects.filter(account__user=user).all()[start:end]
 
     def resolve_accounts(self, info):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Account.objects.filter(user=user).values('id', 'description')
+        return Account.objects.filter(user=user).all()
 
-    def resolve_categories(self, info):
+    def resolve_categories(self, info, start=0, end=5):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Category.objects.filter(user=user).values('id', 'description')
+        return Category.objects.filter(user=user).all()[start:end]
 
 
 class Mutation(graphene.ObjectType):
