@@ -1,5 +1,8 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db import models
+
+
+User = get_user_model()
 
 
 class Category(models.Model):
@@ -14,6 +17,7 @@ class BaseRecord(models.Model):
     class Meta:
         abstract = True
 
+    account = models.ForeignKey('Account', models.CASCADE)
     description = models.CharField(max_length=255, null=True, blank=True)
     amount = models.FloatField()
     date = models.DateField(auto_now_add=True)
