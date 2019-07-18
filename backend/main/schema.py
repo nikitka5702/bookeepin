@@ -2,6 +2,8 @@ import re
 
 import graphene
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.db import models
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 
@@ -37,6 +39,7 @@ class AccountType(DjangoObjectType):
         model = Account
 
 
+# Create Mutations
 class CreateUser(graphene.Mutation):
     user = graphene.Field(UserType)
 
@@ -151,6 +154,168 @@ class CreateAccount(graphene.Mutation):
         return CreateAccount(account=account)
 
 
+# Update Mutations
+class IncomeInput(graphene.InputObjectType):
+    description = graphene.String(required=False)
+    amount = graphene.Float(required=False)
+    date = graphene.Date(required=False)
+    group = graphene.Int(required=False)
+
+
+class UpdateIncome(graphene.Mutation):
+    income = graphene.Field(IncomeType)
+
+    class Arguments:
+        id = graphene.Int()
+        income_data = IncomeInput()
+
+    def mutate(self, info, id, income_data):
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        income = Income.objects.filter(id=id).first()
+
+        for attr, value in income_data.items():
+            setattr(income, attr, value)
+
+        try:
+            income.full_clean()
+            income.save()
+            return UpdateIncome(income=income)
+        except ValidationError as e:
+            return UpdateIncome(income=income, errors=e)
+
+
+class ExpenseInput(graphene.InputObjectType):
+    description = graphene.String(required=False)
+    amount = graphene.Float(required=False)
+    date = graphene.Date(required=False)
+    group = graphene.Int(required=False)
+    cash_back = graphene.Float(required=False)
+
+
+class UpdateExpense(graphene.Mutation):
+    expense = graphene.Field(ExpenseType)
+
+    class Arguments:
+        id = graphene.Int()
+        expense_data = IncomeInput()
+
+    def mutate(self, info, id, expense_data):
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        expense = Expense.objects.filter(id=id).first()
+
+        for attr, value in expense_data.items():
+            setattr(expense, attr, value)
+
+        try:
+            expense.full_clean()
+            expense.save()
+            return UpdateExpense(expense=expense)
+        except ValidationError as e:
+            return UpdateExpense(expense=expense, errors=e)
+
+
+class CategoryInput(graphene.InputObjectType):
+    description = graphene.String()
+
+
+class UpdateCategory(graphene.Mutation):
+    category = graphene.Field(CategoryType)
+
+    class Arguments:
+        id = graphene.Int()
+        category_data = CategoryInput()
+
+    def mutate(self, info, category_data):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        category = Category.objects.filter(id=id).first()
+
+        for attr, value in category_data.items():
+            setattr(category, attr, value)
+
+        try:
+            category.full_clean()
+            category.save()
+            return UpdateCategory(category=category)
+        except ValidationError as e:
+            return UpdateCategory(category=category, errors=e)
+
+
+class AccountIncome(graphene.InputObjectType):
+    amount = graphene.Float(required=False)
+    description = graphene.String(required=False)
+    is_cash = graphene.Boolean(required=False)
+    date_of_open = graphene.Date(required=False)
+    date_of_close = graphene.Date(required=False)
+
+
+class UpdateAccount(graphene.Mutation):
+    account = graphene.Field(CategoryType)
+
+    class Arguments:
+        id = graphene.Int()
+        account_data = AccountIncome()
+
+    def mutate(self, info, id, account_data):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        account = Account.objects.filter(id=id).first()
+
+        for attr, value in account_data.items():
+            setattr(account, attr, value)
+
+        try:
+            account.full_clean()
+            account.save()
+            return UpdateAccount(account=account)
+        except ValidationError as e:
+            return UpdateAccount(account=account, errors=e)
+
+
+# Delete Mutations
+class DeleteMutation(graphene.Mutation):
+    result = graphene.String()
+    model: models.Model
+
+    class Arguments:
+        id = graphene.Int()
+
+    def mutate(self, info, id):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        item = self.model.objects.get(id=id)
+        if item.creator != user:
+            raise GraphQLError('Wrong user!')
+        else:
+            item.delete()
+            return self.__class__(result="Done")
+
+
+class DeleteIncome(DeleteMutation):
+    model = Income
+
+
+class DeleteExpense(DeleteMutation):
+    model = Expense
+
+
+class DeleteCategory(DeleteMutation):
+    model = Category
+
+
+class DeleteAccount(DeleteMutation):
+    model = Account
+
+
 class Query(graphene.ObjectType):
     incomes = graphene.List(IncomeType)
     expenses = graphene.List(ExpenseType)
@@ -189,3 +354,17 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
+    create_income = CreateIncome.Field()
+    create_expense = CreateExpense.Field()
+    create_category = CreateCategory.Field()
+    create_account = CreateAccount.Field()
+
+    update_income = UpdateIncome.Field()
+    update_expense = UpdateExpense.Field()
+    update_category = UpdateCategory.Field()
+    update_account = UpdateAccount.Field()
+
+    delete_income = DeleteIncome.Field()
+    delete_expense = DeleteExpense.Field()
+    delete_category = DeleteCategory.Field()
+    delete_account = DeleteAccount.Field()
