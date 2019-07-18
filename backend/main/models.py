@@ -37,8 +37,8 @@ class Income(BaseRecord):
         db_table = 'income'
 
 
-class Cost(BaseRecord):
+class Expense(BaseRecord):
     class Meta:
-        db_table = 'cost'
+        db_table = 'expense'
 
     cash_back = models.FloatField(default=0.0)
