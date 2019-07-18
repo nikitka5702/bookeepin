@@ -7,6 +7,8 @@ services:
       - POSTGRES_USER=bookeeping
       - POSTGRES_PASSWORD=bookeeping
       - POSTGRES_DB=bookeeping_django
+    ports:
+      - "5438:5432"
   back:
     build:
       context: ./backend
@@ -17,6 +19,8 @@ services:
     env_file: .env
     expose:
       - 8000
+    ports:
+      - "8000:8000"
     depends_on:
       - db
   web:
