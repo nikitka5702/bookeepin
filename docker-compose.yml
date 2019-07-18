@@ -17,6 +17,8 @@ services:
     volumes:
       - static_vol:/code/staticfiles
     env_file: .env
+    volumes:
+      - .\backend:/code/:rw
     expose:
       - 8000
     ports:
