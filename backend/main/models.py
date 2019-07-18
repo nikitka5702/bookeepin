@@ -29,6 +29,7 @@ class Account(models.Model):
     date_of_close = models.DateField()
     amount = models.FloatField()
     description = models.CharField(max_length=255)
+    is_cash = models.BooleanField()
 
 
 class Income(BaseRecord):
