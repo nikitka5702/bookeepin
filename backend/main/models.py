@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
-class Group(models.Model):
+class Category(models.Model):
     class Meta:
         db_table = 'group'
 
@@ -17,7 +17,7 @@ class BaseRecord(models.Model):
     description = models.CharField(max_length=255, null=True, blank=True)
     amount = models.FloatField()
     date = models.DateField(auto_now_add=True)
-    group = models.ForeignKey(Group, models.CASCADE)
+    group = models.ForeignKey(Category, models.CASCADE)
 
 
 class Account(models.Model):
