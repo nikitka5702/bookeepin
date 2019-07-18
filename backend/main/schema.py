@@ -39,7 +39,6 @@ class AccountType(DjangoObjectType):
 
 class CreateUser(graphene.Mutation):
     user = graphene.Field(UserType)
-    EMAIL_PATTERN = r"^[\w\.]+?@[\w]+?\.[\w]+$"
 
     class Arguments:
         username = graphene.String()
@@ -47,14 +46,9 @@ class CreateUser(graphene.Mutation):
         email = graphene.String()
 
     def mutate(self, info, username, password, email):
-        # check is email valid just in case
-        if re.match(CreateUser.EMAIL_PATTERN, email) is None:
-            raise GraphQLError("email is invalid")
-
         user = User(
             username=username,
-            email=email,
-            is_active=False
+            email=email
         )
         user.set_password(password)
         user.save()
