@@ -3,24 +3,32 @@ version: '3'
 services:
   db:
     image: postgres
+    environment:
+      - POSTGRES_USER=bookeeping
+      - POSTGRES_PASSWORD=bookeeping
+      - POSTGRES_DB=bookeeping_django
   back:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn bookeeping.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_vol:/code/staticfiles
+    env_file: .env
     expose:
-      - "8000"
+      - 8000
     depends_on:
       - db
-  front:
+  web:
     build:
-      context: ./front
+      context: .
       dockerfile: Dockerfile
     volumes:
       - .:/app
       - /app/node_modules
+      - static_vol:/staticfiles
     ports:
-      - "80:80"
+      - 80:80
     depends_on:
       - back
   bot:
@@ -29,4 +37,7 @@ services:
       dockerfile: Dockerfile
     command: python bot.py
     depends_on:
-      - back
+      - web
+
+volumes:
+  static_vol:

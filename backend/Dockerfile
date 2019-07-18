@@ -8,3 +8,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc postgresql 
 COPY requirements.txt /code/
 RUN pip install -r requirements.txt
 COPY . .
+RUN python manage.py collectstatic --noinput
