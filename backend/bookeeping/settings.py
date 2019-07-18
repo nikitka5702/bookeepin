@@ -40,7 +40,7 @@ INSTALLED_APPS = [
 
     'graphene_django',
     'taggit',
-    'main',
+    'main.apps',
 ]
 
 GRAPHENE = {
