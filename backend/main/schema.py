@@ -39,7 +39,7 @@ class AccountType(DjangoObjectType):
 
 class CreateUser(graphene.Mutation):
     user = graphene.Field(UserType)
-    EMAIL_PATTERN = r"^[a-zA-Z0-9_]+@[a-zA-Z0-9_]+\.[A-Za-z]{2,3}$"
+    EMAIL_PATTERN = r"^[\w\.]+?@[\w]+?\.[\w]+$"
 
     class Arguments:
         username = graphene.String()
