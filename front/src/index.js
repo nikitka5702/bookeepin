@@ -44,4 +44,4 @@ const app = (
   </ApolloProvider>
 )
 
-ReactDOM.render(<App />, app);
+ReactDOM.render(app, document.getElementById('root'));

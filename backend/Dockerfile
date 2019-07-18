@@ -1,8 +1,10 @@
-FROM python:3.7-alpine
-ENV PYTHONBUFFERED 1
-RUN mkdir /code
+FROM python:3.7-slim
+
+ENV PYTHONUNBUFFERED 1
+
 WORKDIR /code
-RUN apk add --no-cache gcc linx-headers postgresql-dev python3-dev musl-dev
+
+RUN apt-get update && apt-get install -y --no-install-recommends gcc postgresql postgresql-contrib python3-dev
 COPY requirements.txt /code/
 RUN pip install -r requirements.txt
-COPY . /code/
+COPY . .

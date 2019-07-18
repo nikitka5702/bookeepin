@@ -6,7 +6,6 @@ import { Route, Switch } from 'react-router-dom'
 const Router = props => {
   return (
     <Switch>
-
     </Switch>
   )
 }
