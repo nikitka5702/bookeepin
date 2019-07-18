@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+  back:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    expose:
+      - "8000"
+    depends_on:
+      - db
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "4000:80"
+    depends_on:
+      - back
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    command: python bot.py
+    volumes:
+      - .:/code
+    depends_on:
+      - back

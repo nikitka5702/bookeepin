@@ -1,0 +1,12 @@
+pyyaml
+django
+graphene
+graphene-django
+django-taggit
+django-filter
+django-cors-headers
+django-graphql-jwt
+Pillow
+transliterate
+gunicorn
+psycopg2-binary
