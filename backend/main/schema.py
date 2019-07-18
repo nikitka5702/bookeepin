@@ -96,3 +96,7 @@ class Query(graphene.ObjectType):
             raise GraphQLError('You must be logged in!')
 
         return Category.objects.filter(user=user)
+
+
+class Mutation(graphene.ObjectType):
+    create_user = CreateUser.Field()

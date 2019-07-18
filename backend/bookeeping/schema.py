@@ -1,9 +1,17 @@
 import graphene
 import graphene_jwt
-from backend.main.schema import Query
+from backend.main import schema
+
+
+class Query(
+    schema.Query,
+    graphene.ObjectType
+):
+    pass
 
 
 class Mutation(
+    schema.Mutation,
     graphene.ObjectType
 ):
     token_auth = graphene_jwt.ObtainJSONWebToken.Field()
