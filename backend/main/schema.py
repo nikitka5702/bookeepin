@@ -56,6 +56,101 @@ class CreateUser(graphene.Mutation):
         return CreateUser(user=user)
 
 
+class CreateIncome(graphene.Mutation):
+    income = graphene.Field(IncomeType)
+
+    class Arguments:
+        account = graphene.Int()
+        description = graphene.String()
+        amount = graphene.Float()
+        date = graphene.Date()
+        group = graphene.Int()
+
+    def mutate(self, info, account, description, amount, date=None, group=None):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        income = Income.objects.create(
+            account=account,
+            description=description,
+            amount=amount,
+            date=date,
+            group=group,
+        )
+
+        return CreateIncome(income=income)
+
+
+class CreateExpense(graphene.Mutation):
+    expense = graphene.Field(ExpenseType)
+
+    class Arguments:
+        account = graphene.Int()
+        description = graphene.String()
+        amount = graphene.Float()
+        date = graphene.Date()
+        group = graphene.Int()
+        cash_back = graphene.Float()
+
+    def mutate(self, info, account, description, amount, date=None, group=None, cash_back=None):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        expense = Expense.objects.create(
+            account=account,
+            description=description,
+            amount=amount,
+            date=date,
+            group=group,
+            cash_back=cash_back,
+        )
+
+        return CreateExpense(expense=expense)
+
+
+class CreateCategory(graphene.Mutation):
+    category = graphene.Field(CategoryType)
+
+    class Arguments:
+        description = graphene.String()
+
+    def mutate(self, info, description):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        category = Income.objects.create(
+            user=user,
+            description=description,
+        )
+
+        return CreateCategory(category=category)
+
+
+class CreateAccount(graphene.Mutation):
+    account = graphene.Field(CategoryType)
+
+    class Arguments:
+        amount = graphene.Float()
+        description = graphene.String()
+        is_cash = graphene.Boolean()
+        date_of_open = graphene.Date()
+        date_of_close = graphene.Date()
+
+    def mutate(self, info, amount, description, is_cash, date_of_open=None, date_of_close=None):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('You must be logged in!')
+        account = Account.objects.create(
+            date_of_open=date_of_open,
+            date_of_close=date_of_close,
+            amount=amount,
+            description=description,
+            is_cash=is_cash,
+        )
+
+        return CreateAccount(account=account)
+
+
 class Query(graphene.ObjectType):
     incomes = graphene.List(IncomeType)
     expenses = graphene.List(ExpenseType)
@@ -82,14 +177,14 @@ class Query(graphene.ObjectType):
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Account.objects.filter(user=user)
+        return Account.objects.filter(user=user).values('id', 'description')
 
     def resolve_categories(self, info):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Category.objects.filter(user=user)
+        return Category.objects.filter(user=user).values('id', 'description')
 
 
 class Mutation(graphene.ObjectType):
