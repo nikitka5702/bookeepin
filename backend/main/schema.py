@@ -386,11 +386,11 @@ class Query(graphene.ObjectType):
             raise GraphQLError('You must be logged in!')
 
         if search:
-            search = Q(description=search)
+            search = Q(category_type=category_type) & Q(description=search)
+        else:
+            search = Q(category_type=category_type)
 
-        return _get_qs(Category, search, first, skip).filter(
-            Q(category_type=category_type)
-        )
+        return _get_qs(Category, search, first, skip)
 
 
 class Mutation(graphene.ObjectType):
