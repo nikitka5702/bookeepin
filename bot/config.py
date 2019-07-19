@@ -9,7 +9,7 @@ class Config(object):
     def __init__(self):
         settings_files = []
         project_path = os.path.dirname(__file__)
-        project_settings_file = os.path.join(project_path, 'config.yaml')
+        project_settings_file = os.path.join(project_path, '../bot/config.yaml')
         settings_files.append(project_settings_file)
 
         self.config = {}

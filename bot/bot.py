@@ -20,19 +20,37 @@ bot = Bot(token=BOT_TOKEN, loop=loop)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
+ACCOUNTS = ['наличка', 'Счет']
 
 class BotStates(StatesGroup):
+    expense = State()
     balance = State()
-    income = State()
-    expanses = State()
     account = State()
+    income = State()
     amount = State()
     category = State()
     date = State()
 
+    start = State()
+    details = State()
 
-@dp.message_handler(commands=['start'])
-async def cmd_start(message: types.Message):
+
+def get_accounts(user):
+    return ACCOUNTS
+
+
+def get_accounts_keyboard_markup(user):
+    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+
+    for item in get_accounts(user):
+        reply_markup.add(item)
+
+    return reply_markup
+
+
+@dp.message_handler(commands=['start', 'Start'])
+@dp.message_handler(lambda msg: msg.text.lower() in ['start'])
+async def cmd_start(message: types.Message, state: FSMContext):
     """
     Conversation's entry point
     """
@@ -42,12 +60,15 @@ async def cmd_start(message: types.Message):
     reply_markup.add('Просмотреть остаток на счёте')
     reply_markup.add('Добавить расходы')
     reply_markup.add('Добавить доходы')
+    reply_markup.add('Выход')
+
+    await BotStates.start.set()
 
     await bot.send_message(chat_id=message.chat.id, text='Выберите операцию', reply_markup=reply_markup)
 
 
-@dp.message_handler(state='*', commands=['cancel'])
-@dp.message_handler(lambda message: message.text.lower() == 'cancel', state='*')
+@dp.message_handler(commands=['cancel'])
+@dp.message_handler(lambda message: message.text.lower() in ['cancel', 'выход'], state=BotStates.start)
 async def cancel_handler(message: types.Message, state: FSMContext, raw_state: Optional[str] = None):
     """
     Allow user to cancel any action
@@ -56,24 +77,49 @@ async def cancel_handler(message: types.Message, state: FSMContext, raw_state: O
         return
     # Cancel state and inform user about it
     await state.finish()
+
+    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    reply_markup.add('Start')
     # And remove keyboard
-    await message.reply('Canceled.', reply_markup=types.ReplyKeyboardRemove())
+    await message.reply('Canceled.', reply_markup=reply_markup)
 
 
-@dp.message_handler(lambda msg: msg.lower().strip() == 'просмотреть остаток на счёте', state=BotStates.balance)
+@dp.message_handler(lambda msg: msg.text.lower() == 'просмотреть остаток на счёте', state=BotStates.start)
 async def process_balance(message: types.Message, state: FSMContext):
+
+    # TODO: send request for balance for this user
+
     await bot.send_message(chat_id=message.chat.id, text='остаток')
 
 
-@dp.message_handler(lambda msg: msg.lower().strip() == 'добавить расходы', state=BotStates.expanses)
+@dp.message_handler(lambda msg: msg.text == 'Добавить расходы', state=BotStates.start)
 async def process_income(message: types.Message, state: FSMContext):
-    await bot.send_message(chat_id=message.chat.id, text='расходы')
+
+    reply_markup = get_accounts_keyboard_markup(message.from_user)
+    await BotStates.details.set()
+
+    async with state.proxy() as data:
+        data['opp'] = 'расходы'
+
+    await bot.send_message(chat_id=message.chat.id, text='Выберите источник', reply_markup=reply_markup)
 
 
-@dp.message_handler(lambda msg: msg.lower().strip() == 'добавить доходы', state=BotStates.income)
-async def process_expanses(message: types.Message, state: FSMContext):
-    await bot.send_message(chat_id=message.chat.id, text='доходы')
+@dp.message_handler(lambda msg: msg.text == 'Добавить доходы', state=BotStates.start)
+async def process_expanses(message: types.Message, state: FSMContext=None):
 
+    # TODO: next step
+    await BotStates.details.set()
+
+    async with state.proxy() as data:
+        data['opp'] = 'доходы'
+
+    await bot.send_message(chat_id=message.chat.id, text='Выберите куда начислены средства')
+
+
+@dp.message_handler(lambda msg: msg.text in get_accounts(msg.from_user), state=BotStates.details)
+async def process_amount(message: types.Message, state: FSMContext):
+
+    await bot.send_message(chat_id=message.chat.id, text='details')
 
 @dp.message_handler(state=BotStates.account)
 async def process_account(message: types.Message, state: FSMContext):
@@ -100,7 +146,7 @@ async def process_category(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=BotStates.date)
-async def process_category(message: types.Message, state: FSMContext):
+async def process_date(message: types.Message, state: FSMContext):
     pass
 
 
