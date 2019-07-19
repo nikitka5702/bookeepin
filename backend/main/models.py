@@ -22,7 +22,7 @@ class BaseRecord(models.Model):
     description = models.CharField(max_length=255, null=True, blank=True)
     amount = models.FloatField()
     date = models.DateField(auto_now_add=True)
-    group = models.ForeignKey(Category, models.CASCADE)
+    group = models.ForeignKey(Category, null=True, blank=True, on_delete=models.CASCADE)
 
 
 class Account(models.Model):

@@ -7,6 +7,10 @@ services:
       - POSTGRES_USER=bookeeping
       - POSTGRES_PASSWORD=bookeeping
       - POSTGRES_DB=bookeeping_django
+    ports:
+      - 5435:5432
+  redis:
+    image: redis:5.0.5-alpine
   back:
     build:
       context: ./backend
@@ -19,6 +23,7 @@ services:
       - 8000
     depends_on:
       - db
+      - redis
   web:
     build:
       context: .

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
 
     'graphene_django',
     'taggit',
+
     'main',
 ]
 
@@ -128,6 +130,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 GRAPHENE = {
     'SCHEMA': 'bookeeping.schema.schema',
     'MIDDLEWARE': ['graphql_jwt.middleware.JSONWebTokenMiddleware', ],
+}
+
+GRAPHQL_JWT = {
+    'JWT_VERIFY_EXPIRATION': DEBUG,
+    'JWT_EXPIRATION_DELTA': timedelta(days=1)
 }
 
 AUTHENTICATION_BACKENDS = [

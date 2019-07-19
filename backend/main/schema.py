@@ -2,11 +2,11 @@ import graphene
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 
-from main.models import Income, Expense, Category, Account
-
+from .models import Income, Expense, Category, Account
 
 User = get_user_model()
 
@@ -30,6 +30,7 @@ class ExpenseType(DjangoObjectType):
 class CategoryType(DjangoObjectType):
     class Meta:
         model = Category
+        only_fields = ('id', 'user', 'description')
 
 
 class AccountType(DjangoObjectType):
@@ -314,46 +315,76 @@ class DeleteAccount(DeleteMutation):
     model = Account
 
 
+def _get_qs(model, search=None, first=None, skip=None):
+    qs = model.objects.all()
+    if search:
+        qs = qs.filter(search)
+    if skip:
+        qs = qs[skip:]
+    if first:
+        qs = qs[:first]
+    return qs
+
+
 class Query(graphene.ObjectType):
-    incomes = graphene.List(IncomeType,
-                            start=graphene.Int(),
-                            end=graphene.Int())
-    expenses = graphene.List(ExpenseType,
-                             start=graphene.Int(),
-                             end=graphene.Int())
+    incomes = graphene.List(
+        IncomeType,
+        search=graphene.String(),
+        first=graphene.Int(),
+        skip=graphene.Int()
+    )
+    expenses = graphene.List(
+        ExpenseType,
+        search=graphene.String(),
+        first=graphene.Int(),
+        skip=graphene.Int()
+    )
+    accounts = graphene.List(
+        AccountType
+    )
+    categories = graphene.List(
+        CategoryType,
+        search=graphene.String(),
+        first=graphene.Int(),
+        skip=graphene.Int()
+    )
 
-    accounts = graphene.List(AccountType)
-    categories = graphene.List(CategoryType,
-                               start=graphene.Int(),
-                               end=graphene.Int())
-
-    def resolve_incomes(self, info, start=0, end=5):
+    def resolve_incomes(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Income.objects.filter(account__user=user).all()[start:end]
+        if search:
+            search = Q(description=search)
 
-    def resolve_expenses(self, info, start=0, end=5):
+        return _get_qs(Income, search, first, skip)
+
+    def resolve_expenses(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Expense.objects.filter(account__user=user).all()[start:end]
+        if search:
+            search = Q(description=search)
 
-    def resolve_accounts(self, info):
+        return _get_qs(Expense, search, first, skip)
+
+    def resolve_accounts(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
         return Account.objects.filter(user=user).all()
 
-    def resolve_categories(self, info, start=0, end=5):
+    def resolve_categories(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
-        return Category.objects.filter(user=user).all()[start:end]
+        if search:
+            search = Q(description=search)
+
+        return _get_qs(Category, search, first, skip)
 
 
 class Mutation(graphene.ObjectType):
