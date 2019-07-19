@@ -2,6 +2,8 @@ import graphene
 import graphql_jwt
 import main.schema
 
+import main.schema
+
 
 class Query(
     main.schema.Query,

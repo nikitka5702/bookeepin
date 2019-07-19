@@ -9,8 +9,18 @@ class Category(models.Model):
     class Meta:
         ordering = ['id']
         db_table = 'group'
+        verbose_name_plural = 'Categories'
+
+    INCOME = 'I'
+    EXPENSE = 'E'
+
+    CATEGORY_TYPE_CHOICES = [
+        (INCOME, 'Income'),
+        (EXPENSE, 'Expense')
+    ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category_type = models.CharField(max_length=1, choices=CATEGORY_TYPE_CHOICES)
     description = models.CharField(max_length=255)
 
 
@@ -22,7 +32,7 @@ class BaseRecord(models.Model):
     description = models.CharField(max_length=255, null=True, blank=True)
     amount = models.FloatField()
     date = models.DateField(auto_now_add=True)
-    group = models.ForeignKey(Category, models.CASCADE)
+    group = models.ForeignKey(Category, null=True, blank=True, on_delete=models.CASCADE)
 
 
 class Account(models.Model):
