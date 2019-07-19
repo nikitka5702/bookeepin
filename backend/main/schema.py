@@ -30,7 +30,7 @@ class ExpenseType(DjangoObjectType):
 class CategoryType(DjangoObjectType):
     class Meta:
         model = Category
-        only_fields = ('id', 'user', 'description')
+        only_fields = ('id', 'user', 'category_type', 'description')
 
 
 class AccountType(DjangoObjectType):
@@ -114,14 +114,16 @@ class CreateCategory(graphene.Mutation):
     category = graphene.Field(CategoryType)
 
     class Arguments:
+        category_type = graphene.String()
         description = graphene.String()
 
-    def mutate(self, info, description):
+    def mutate(self, info, category_type, description):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You must be logged in!')
         category = Category.objects.create(
             user=user,
+            category_type=category_type,
             description=description,
         )
 
@@ -220,7 +222,8 @@ class UpdateExpense(graphene.Mutation):
 
 
 class CategoryInput(graphene.InputObjectType):
-    description = graphene.String()
+    category_type = graphene.String(reqired=False)
+    description = graphene.String(required=False)
 
 
 class UpdateCategory(graphene.Mutation):
@@ -344,6 +347,7 @@ class Query(graphene.ObjectType):
     )
     categories = graphene.List(
         CategoryType,
+        category_type=graphene.NonNull(graphene.String),
         search=graphene.String(),
         first=graphene.Int(),
         skip=graphene.Int()
@@ -376,7 +380,7 @@ class Query(graphene.ObjectType):
 
         return Account.objects.filter(user=user).all()
 
-    def resolve_categories(self, info, search=None, first=None, skip=None, **kwargs):
+    def resolve_categories(self, info, category_type, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
@@ -384,7 +388,9 @@ class Query(graphene.ObjectType):
         if search:
             search = Q(description=search)
 
-        return _get_qs(Category, search, first, skip)
+        return _get_qs(Category, search, first, skip).filter(
+            Q(category_type=category_type)
+        )
 
 
 class Mutation(graphene.ObjectType):

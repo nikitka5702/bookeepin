@@ -9,8 +9,18 @@ class Category(models.Model):
     class Meta:
         ordering = ['id']
         db_table = 'group'
+        verbose_name_plural = 'Categories'
+
+    INCOME = 'I'
+    EXPENSE = 'E'
+
+    CATEGORY_TYPE_CHOICES = [
+        (INCOME, 'Income'),
+        (EXPENSE, 'Expense')
+    ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category_type = models.CharField(max_length=1, choices=CATEGORY_TYPE_CHOICES)
     description = models.CharField(max_length=255)
 
 
