@@ -27,6 +27,7 @@ dp = Dispatcher(bot, storage=storage)
 ACCOUNTS = {1: 'наличка', 2: 'Счет'}
 CATEGORIES = {1: 'Машина', 2: 'Магазин', 3: 'Обеды'}
 
+
 class BotStates(StatesGroup):
     start = State()
     details = State()
