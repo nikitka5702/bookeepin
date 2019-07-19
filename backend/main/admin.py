@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from backend.main.models import Income, Expense, Category, Account
+from main.models import Income, Expense, Category, Account
 
 admin.site.register(Income)
 admin.site.register(Expense)

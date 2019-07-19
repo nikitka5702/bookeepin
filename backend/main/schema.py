@@ -5,7 +5,7 @@ from django.db import models
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 
-from backend.main.models import Income, Expense, Category, Account
+from main.models import Income, Expense, Category, Account
 
 
 User = get_user_model()

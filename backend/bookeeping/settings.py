@@ -38,7 +38,7 @@ INSTALLED_APPS = [
 
     'graphene_django',
     'taggit',
-    'backend.main',
+    'main',
 ]
 
 MIDDLEWARE = [
