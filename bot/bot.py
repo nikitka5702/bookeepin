@@ -95,8 +95,8 @@ def get_start_menu():
     return reply_markup
 
 
-@dp.message_handler(commands=['start', 'Start'])
-@dp.message_handler(lambda msg: msg.text.lower() in ['start'])
+@dp.message_handler(commands=['start'])
+@dp.message_handler(lambda msg: msg.text.lower() in ['start', 'Start'])
 async def cmd_start(message: types.Message, state: FSMContext):
     """
     Conversation's entry point
