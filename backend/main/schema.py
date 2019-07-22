@@ -389,8 +389,7 @@ class Query(graphene.ObjectType):
         if search:
             search = Q(description=search)
 
-        qs, total = _get_qs(Income, search, first, skip)
-        return IncomeQueryType(qs, total)
+        return IncomeQueryType(*_get_qs(Income, search, first, skip))
 
     def resolve_total_expenses(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
@@ -400,14 +399,16 @@ class Query(graphene.ObjectType):
         if search:
             search = Q(description=search)
 
-        return _get_qs(Expense, search, first, skip)
+        return ExpenseQueryType(*_get_qs(Expense, search, first, skip))
 
     def resolve_total_accounts(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
+        qs = Account.objects.filter(user=user).all()
+        total = qs.count()
 
-        return Account.objects.filter(user=user).all()
+        return AccountQueryType(qs, total)
 
     def resolve_total_categories(self, info, category_type, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
@@ -419,7 +420,7 @@ class Query(graphene.ObjectType):
         else:
             search = Q(category_type=category_type)
 
-        return _get_qs(Category, search, first, skip)
+        return CategoryQueryType(*_get_qs(Category, search, first, skip))
 
 
 class Mutation(graphene.ObjectType):
