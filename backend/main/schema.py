@@ -330,6 +330,7 @@ def _get_qs(model, search=None, first=None, skip=None):
 
 
 class Query(graphene.ObjectType):
+    me = graphene.Field(UserType)
     incomes = graphene.List(
         IncomeType,
         search=graphene.String(),
@@ -352,6 +353,12 @@ class Query(graphene.ObjectType):
         first=graphene.Int(),
         skip=graphene.Int()
     )
+
+    def resolve_me(self, info, **kwargs):
+        user = info.context.user
+        if user.is_anonymous:
+            raise GraphQLError('Not logged in!')
+        return user
 
     def resolve_incomes(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user

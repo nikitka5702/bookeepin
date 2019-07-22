@@ -1,11 +1,20 @@
 import React, {Component} from 'react'
+import { Layout } from 'antd'
+
+const { Content } = Layout
 
 export default class Index extends Component {
   render() {
     return (
-      <div className="container">
-        Hello from materialize-css
-      </div>
+      <Content
+        style={{
+          margin: '24px 16px',
+          padding: 24,
+          background: '#fff'
+        }}
+      >
+        Hello
+      </Content>
     )
   }
 }

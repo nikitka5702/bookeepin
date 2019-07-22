@@ -1,10 +1,12 @@
-import React, {Component} from 'react'
-import {Formik, Form} from 'formik'
+import React, { Component } from 'react'
+import { Formik, ErrorMessage } from 'formik'
+import { Icon, Layout, Tooltip } from 'antd'
+import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
-import {Mutation} from 'react-apollo'
+import { Mutation } from 'react-apollo'
 import * as Yup from 'yup'
 
-import MaterializeField from '../elements/MaterializeField'
+const { Content } = Layout
 
 const TOKEN_AUTH = gql`
 mutation TokenAuth($username: String!, $password: String!) {
@@ -26,44 +28,55 @@ const SignInSchema = Yup.object().shape({
 export default class Login extends Component {
   render() {
     return (
-      <div className="content">
-        <div className="col s8 offset-s2">
-          <Mutation
-            mutation={TOKEN_AUTH}
-            update={(cache, {data: {tokenAuth}}) => {
-              const {token} = tokenAuth
-              localStorage.setItem('token', token)
-              this.props.history.push('/')
-            }}
-          >
-            {(tokenAuth, {data}) => (
-              <Formik
-                initialValues={{username: '', password: ''}}
-                validationSchema={SignInSchema}
-                onSubmit={(values, actions) => {
-                  const {username, password} = values
-                  tokenAuth({variables: {username, password}})
-                }}
-                render={({errors, status, touched, isSubmitting}) => (
-                  <Form>
-                    <div className="row">
-                      <div className="col s8 offset-s2">
-                        <div className="row">
-                          <MaterializeField type="text" name="username" component="p" title="Username"/>
-                        </div>
-                        <div className="row">
-                          <MaterializeField type="password" name="password" component="p" title="Password"/>
-                        </div>
-                        <button type="submit" className="btn" disabled={isSubmitting}>Submit</button>
-                      </div>
-                    </div>
-                  </Form>
-                )}
-              />
-            )}
-          </Mutation>
-        </div>
-      </div>
+      <Content
+        style={{
+          margin: '24px 16px',
+          padding: 24,
+          background: '#fff'
+        }}
+      >
+        <Mutation
+          mutation={TOKEN_AUTH}
+          update={(cache, {data: {tokenAuth}}) => {
+            const {token} = tokenAuth
+            localStorage.setItem('token', token)
+            this.props.history.push('/')
+          }}
+        >
+          {(tokenAuth, {data}) => (
+            <Formik
+              initialValues={{username: '', password: ''}}
+              validationSchema={SignInSchema}
+              onSubmit={(values, { setSubmitting }) => {
+                const {username, password} = values
+                setSubmitting(false)
+                tokenAuth({variables: {username, password}})
+              }}
+              render={({errors, status, touched, isSubmitting}) => (
+                <Form>
+                  <Form.Item>
+                    <Input
+                      prefix={<Icon type="user" style={{color: 'rgba(0,0,0,.25)'}} />} 
+                      name="username"
+                      placeholder="Username"
+                    />
+                    <ErrorMessage name="username" />
+                  </Form.Item>
+                  <Form.Item>
+                    <Input.Password
+                      prefix={<Icon type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                      name="password"
+                      placeholder="Password"
+                    />
+                    <ErrorMessage name="password" />
+                  </Form.Item>
+                  <SubmitButton>Login</SubmitButton>
+                </Form>
+              )}
+            />
+          )}
+        </Mutation>
+      </Content>
     )
   }
 }

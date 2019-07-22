@@ -1,10 +1,12 @@
-import React, {Component} from 'react'
-import {Formik, Form} from 'formik'
+import React, { Component } from 'react'
+import { Formik, ErrorMessage } from 'formik'
+import { Layout } from 'antd'
+import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
 import {Mutation} from 'react-apollo'
 import * as Yup from 'yup'
 
-import MaterializeField from '../elements/MaterializeField'
+const { Content } = Layout
 
 const CREATE_USER = gql`
     mutation CreateUser($username: String!, $email: String!, $password: String!) {
@@ -34,54 +36,66 @@ const SignUpSchema = Yup.object().shape({
 export default class Register extends Component {
   render() {
     return (
-      <div className="content">
-        <div className="col s8 offset-s2">
-          <Mutation
-            mutation={CREATE_USER}
-            update={(cache, {data: {createUser: {user: {id}}}}) => {
-              console.log(id)
-              this.props.history.push('/login')
-            }}
-          >
-            {(createUser, {data}) => (
-              <Formik
-                initialValues={{username: '', email: '', password: '', passwordConfirm: ''}}
-                validationSchema={SignUpSchema}
-                onSubmit={(values, actions) => {
-                  const {username, email, password} = values
-                  createUser({variables: {username, email, password}})
-                }}
-                render={({errors, status, touched, isSubmitting}) => (
-                  <Form>
-                    <div className="row">
-                      <div className="col s8 offset-s2">
-                        <div className="row">
-                          <div className="col s6">
-                            <MaterializeField type="text" name="username" component="p" title="Username"/>
-                          </div>
-                          <div className="col s6">
-                            <MaterializeField type="text" name="email" component="p" title="Email"/>
-                          </div>
-                        </div>
-                        <div className="row">
-                          <div className="col s6">
-                            <MaterializeField type="password" name="password" component="p" title="Password"/>
-                          </div>
-                          <div className="col s6">
-                            <MaterializeField type="password" name="passwordConfirm" component="p"
-                                              title="Password Confirm"/>
-                          </div>
-                        </div>
-                        <button type="submit" className="btn" disabled={isSubmitting}>Submit</button>
-                      </div>
-                    </div>
-                  </Form>
-                )}
-              />
-            )}
-          </Mutation>
-        </div>
-      </div>
+      <Content
+        style={{
+          margin: '24px 16px',
+          padding: 24,
+          background: '#fff'
+        }}
+      >
+        <Mutation
+          mutation={CREATE_USER}
+          update={(cache, {data: {createUser: {user: {id}}}}) => {
+            this.props.history.push('/login')
+          }}
+          errors
+        >
+          {(createUser, {data}) => (
+            <Formik
+              initialValues={{username: '', email: '', password: '', passwordConfirm: ''}}
+              validationSchema={SignUpSchema}
+              onSubmit={(values, { setSubmitting }) => {
+                const {username, email, password} = values
+                setSubmitting(false)
+                createUser({variables: {username, email, password}})
+              }}
+              render={({errors, status, touched, isSubmitting}) => (
+                <Form>
+                  <Form.Item>
+                    <Input
+                      name="username"
+                      placeholder="Username"
+                    />
+                    <ErrorMessage name="username" />
+                  </Form.Item>
+                  <Form.Item>
+                    <Input
+                      name="email"
+                      placeholder="Email"
+                    />
+                    <ErrorMessage name="email" />
+                  </Form.Item>
+                  <Form.Item>
+                    <Input.Password
+                      name="password"
+                      placeholder="Password"
+                    />
+                    <ErrorMessage name="password" />
+                  </Form.Item>
+                  <Form.Item>
+                    <Input.Password
+                      name="passwordConfirm"
+                      placeholder="Confirm Password"
+                    />
+                    <ErrorMessage name="passwordConfirm" />
+                  </Form.Item>
+                  <SubmitButton>Register</SubmitButton>
+                </Form>
+              )}
+            />
+          )}
+        </Mutation>
+      </Content>
     )
   }
 }

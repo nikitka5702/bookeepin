@@ -14,7 +14,7 @@ import App from './App'
 import './index.css'
 
 const httpLink = createHttpLink({
-  uri: '/graphql/',
+  uri: 'http://localhost/graphql/',
 })
 
 const authMiddleware = new ApolloLink((operation, forward) => {
