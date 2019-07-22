@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Formik, ErrorMessage } from 'formik'
-import { Icon, Layout, Tooltip } from 'antd'
+import { Icon, Layout } from 'antd'
 import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
 import { Mutation } from 'react-apollo'

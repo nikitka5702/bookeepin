@@ -14,42 +14,60 @@ class NavRouterMenu extends Component {
       isAuthenticated ?
         (
           [
-            <Fragment>
+            <Menu.Item key="1">
               <Icon type="info-circle" />
               <span>Main</span>
               <Link to="/" />
-            </Fragment>,
-            <Fragment>
-              <Icon type="user" />
-              <span>Profile</span>
-              <Link to="profile" />
-            </Fragment>,
-            <Fragment>
+            </Menu.Item>,
+            <SubMenu 
+              key="sub1"
+              title={
+                <span>
+                  <Icon type="user" />
+                  <span>Profile</span>
+                </span>
+              }
+            >
+              <Menu.Item key="2">
+                <Icon type="rise" />
+                <span>Incomes</span>
+                <Link to='incomes' />
+              </Menu.Item>
+              <Menu.Item key="3">
+                <Icon type="fall" />
+                <span>Expenses</span>
+              </Menu.Item>
+              <Menu.Item key="4">
+                <Icon type="pie-chart" />
+                <span>Statistics</span>
+              </Menu.Item>
+            </SubMenu>,
+            <Menu.Item key="5">
               <Icon type="logout" />
               <span>Logout</span>
               <a href="#$" onClick={e => {
                 localStorage.removeItem('token')
                 this.props.history.push('/')
               }} />
-            </Fragment>
+            </Menu.Item>
           ]
         ) : (
           [
-            <Fragment>
+            <Menu.Item key="1">
               <Icon type="info-circle" />
               <span>Main</span>
               <Link to="/" />
-            </Fragment>,
-            <Fragment>
+            </Menu.Item>,
+            <Menu.Item key="2">
               <Icon type="login" />
               <span>Login</span>
               <Link to="login" />
-            </Fragment>,
-            <Fragment>
+            </Menu.Item>,
+            <Menu.Item key="3">
               <Icon type="profile" />
               <span>Register</span>
               <Link to="reg" />
-            </Fragment>
+            </Menu.Item>
           ]
         )
 
@@ -59,7 +77,7 @@ class NavRouterMenu extends Component {
         theme="dark"
         selectable={false}
       >
-        {auth.map((el, idx) => <Menu.Item key={idx}>{el}</Menu.Item>)}
+        {auth.map(el => el)}
       </Menu>
     )
   }

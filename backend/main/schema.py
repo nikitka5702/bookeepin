@@ -320,34 +320,55 @@ class DeleteAccount(DeleteMutation):
 
 def _get_qs(model, search=None, first=None, skip=None):
     qs = model.objects.all()
+    total = qs.count()
     if search:
         qs = qs.filter(search)
     if skip:
         qs = qs[skip:]
     if first:
         qs = qs[:first]
-    return qs
+    return qs, total
+
+
+class IncomeQueryType(graphene.ObjectType):
+    incomes = graphene.List(IncomeType)
+    total = graphene.Int()
+
+
+class ExpenseQueryType(graphene.ObjectType):
+    expenses = graphene.List(ExpenseType)
+    total = graphene.Int()
+
+
+class AccountQueryType(graphene.ObjectType):
+    accounts = graphene.List(AccountType)
+    total = graphene.Int()
+
+
+class CategoryQueryType(graphene.ObjectType):
+    categories = graphene.List(CategoryType)
+    total = graphene.Int()
 
 
 class Query(graphene.ObjectType):
     me = graphene.Field(UserType)
-    incomes = graphene.List(
-        IncomeType,
+    total_incomes = graphene.Field(
+        IncomeQueryType,
         search=graphene.String(),
         first=graphene.Int(),
         skip=graphene.Int()
     )
-    expenses = graphene.List(
-        ExpenseType,
+    total_expenses = graphene.Field(
+        ExpenseQueryType,
         search=graphene.String(),
         first=graphene.Int(),
         skip=graphene.Int()
     )
-    accounts = graphene.List(
-        AccountType
+    total_accounts = graphene.Field(
+        AccountQueryType
     )
-    categories = graphene.List(
-        CategoryType,
+    total_categories = graphene.Field(
+        CategoryQueryType,
         category_type=graphene.NonNull(graphene.String),
         search=graphene.String(),
         first=graphene.Int(),
@@ -360,7 +381,7 @@ class Query(graphene.ObjectType):
             raise GraphQLError('Not logged in!')
         return user
 
-    def resolve_incomes(self, info, search=None, first=None, skip=None, **kwargs):
+    def resolve_total_incomes(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
@@ -368,9 +389,10 @@ class Query(graphene.ObjectType):
         if search:
             search = Q(description=search)
 
-        return _get_qs(Income, search, first, skip)
+        qs, total = _get_qs(Income, search, first, skip)
+        return IncomeQueryType(qs, total)
 
-    def resolve_expenses(self, info, search=None, first=None, skip=None, **kwargs):
+    def resolve_total_expenses(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
@@ -380,14 +402,14 @@ class Query(graphene.ObjectType):
 
         return _get_qs(Expense, search, first, skip)
 
-    def resolve_accounts(self, info, **kwargs):
+    def resolve_total_accounts(self, info, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
         return Account.objects.filter(user=user).all()
 
-    def resolve_categories(self, info, category_type, search=None, first=None, skip=None, **kwargs):
+    def resolve_total_categories(self, info, category_type, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
