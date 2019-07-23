@@ -357,18 +357,23 @@ class Query(graphene.ObjectType):
     me = graphene.Field(UserType)
     total_incomes = graphene.Field(
         IncomeQueryType,
+        account_id=graphene.NonNull(graphene.Int),
         search=graphene.String(),
         first=graphene.Int(),
         skip=graphene.Int()
     )
     total_expenses = graphene.Field(
         ExpenseQueryType,
+        account_id=graphene.NonNull(graphene.Int),
         search=graphene.String(),
         first=graphene.Int(),
         skip=graphene.Int()
     )
     total_accounts = graphene.Field(
-        AccountQueryType
+        AccountQueryType,
+        search=graphene.String(),
+        first=graphene.Int(),
+        skip=graphene.Int()
     )
     total_categories = graphene.Field(
         CategoryQueryType,
@@ -384,38 +389,41 @@ class Query(graphene.ObjectType):
             raise GraphQLError('Not logged in!')
         return user
 
-    def resolve_total_incomes(self, info, search=None, first=None, skip=None, **kwargs):
+    def resolve_total_incomes(self, info, account_id=None, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
         if search:
-            search = Q(description=search) & Q(account__user=user)
+            search = Q(description=search) & Q(account__id=account_id)
         else:
-            search = Q(account__user=user)
+            search = Q(account__id=account_id)
 
         return IncomeQueryType(*_get_qs(Income, search, first, skip))
 
-    def resolve_total_expenses(self, info, search=None, first=None, skip=None, **kwargs):
+    def resolve_total_expenses(self, info, account_id=None, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
 
         if search:
-            search = Q(description=search) & Q(account__user=user)
+            search = Q(description=search) & Q(account__id=account_id)
         else:
-            search = Q(account__user=user)
+            search = Q(account__id=account_id)
 
         return ExpenseQueryType(*_get_qs(Expense, search, first, skip))
 
-    def resolve_total_accounts(self, info, **kwargs):
+    def resolve_total_accounts(self, info, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
         if user.is_anonymous or not user.is_active:
             raise GraphQLError('You must be logged in!')
-        qs = Account.objects.filter(user=user).all()
-        total = qs.count()
 
-        return AccountQueryType(qs, total)
+        if search:
+            search = Q(description=search) & Q(user=user)
+        else:
+            search = Q(user=user)
+
+        return AccountQueryType(*_get_qs(Account, search, first, skip))
 
     def resolve_total_categories(self, info, category_type, search=None, first=None, skip=None, **kwargs):
         user = info.context.user
