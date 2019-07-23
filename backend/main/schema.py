@@ -1,3 +1,5 @@
+import datetime
+
 import graphene
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -72,6 +74,9 @@ class CreateIncome(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You must be logged in!')
+        account = Account.objects.filter(id=account).first()
+        if group:
+            group = Category.objects.filter(id=group).first()
         income = Income.objects.create(
             account=account,
             description=description,
@@ -98,6 +103,14 @@ class CreateExpense(graphene.Mutation):
         user = info.context.user
         if user.is_anonymous:
             raise GraphQLError('You must be logged in!')
+        account = Account.objects.filter(id=account).first()
+        if group:
+            group = Category.objects.filter(id=group).first()
+        if not cash_back:
+            cash_back = 0.0
+        if not date:
+            date = datetime.date.today()
+
         expense = Expense.objects.create(
             account=account,
             description=description,

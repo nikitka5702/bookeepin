@@ -4,13 +4,19 @@ services:
   db:
     image: postgres
     environment:
-      - POSTGRES_USER=bookeeping
-      - POSTGRES_PASSWORD=bookeeping
-      - POSTGRES_DB=bookeeping_django
+      POSTGRES_USER: bookeeping
+      POSTGRES_PASSWORD: bookeeping
+      POSTGRES_DB: bookeeping_django
+    volumes:
+      - postgres:/var/lib/postgresql/data:delegated
     ports:
-      - 5435:5432
+      - 5438:5432
   redis:
     image: redis:5.0.5-alpine
+    expose:
+      - 6379
+    volumes:
+      - ./docker/files/redis:/var/lib/redis
   back:
     build:
       context: ./backend
@@ -40,9 +46,12 @@ services:
     build:
       context: ./bot
       dockerfile: Dockerfile
+    volumes:
+      - .\bot:/code/:rw
     command: python bot.py
     depends_on:
       - web
 
 volumes:
   static_vol:
+  postgres:

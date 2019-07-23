@@ -1,6 +1,7 @@
 import asyncio
 import locale
 
+import redis
 from typing import Optional
 
 from aiogram import Bot, Dispatcher, types
@@ -10,7 +11,9 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import executor
 
 from config import config
+from api import sign_in, create_category, get_accounts_dict, get_categories_dict, create_expense, create_income
 
+r = redis.StrictRedis(host=config.REDIS_HOST, port=config.REDIS_PORT, db=config.REDIS_DB)
 
 INCOME = 'I'
 EXPENSE = 'E'
@@ -24,9 +27,6 @@ bot = Bot(token=BOT_TOKEN, loop=loop)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-ACCOUNTS = {1: 'наличка', 2: 'Счет'}
-CATEGORIES = {1: 'Машина', 2: 'Магазин', 3: 'Обеды'}
-
 
 class BotStates(StatesGroup):
     start = State()
@@ -36,35 +36,48 @@ class BotStates(StatesGroup):
     category = State()
     date = State()
 
-
-def get_categories(user) -> list:
-    res = list(CATEGORIES.values())
-
-    return res
+    sign_in = State()
 
 
 def get_category_keyboard_markup(user, opp_type):
-    choice = get_categories(user)
+    choice = get_categories(opp_type, user)
     choice.append('Отмена')
     choice.insert(0, 'skip')
 
     return get_keyboard_markup(choice)
 
 
-def get_category_id(name, type):
-    for key, value in CATEGORIES.items():
-        if value == name:
-            return key
+def get_token_from_redis(user):
+    return r.get(user.id).decode()
 
 
-def get_accounts(user):
-    res = list(ACCOUNTS.values())
+def get_categories(categories_type, user) -> list:
+    token = get_token_from_redis(user)
+    res = list(get_categories_dict(categories_type, token).values())
 
     return res
 
 
-def get_account_id(name: str):
-    for key, value in ACCOUNTS.items():
+def get_category_id(name, type_, user):
+    for key, value in get_categories_dict(type_, user).items():
+        if value == name:
+            return key
+    return create_category(type_, name, get_token_from_redis(user))
+
+
+def get_accounts(user):
+    token = get_token_from_redis(user)
+    accounts = get_accounts_dict(token)
+    if accounts:
+        res = list(accounts.values())
+        return res
+    else:
+        return []
+
+
+def get_account_id(name: str, user):
+    token = get_token_from_redis(user)
+    for key, value in get_accounts_dict(token).items():
         if value == name:
             return key
 
@@ -78,7 +91,7 @@ def get_keyboard_markup(choice: list):
     return reply_markup
 
 
-def get_accounts_keyboard_markup(user, choice: list=None):
+def get_accounts_keyboard_markup(user, choice: list = None):
     if not choice:
         choice = get_accounts(user)
 
@@ -96,19 +109,47 @@ def get_start_menu():
     return reply_markup
 
 
+def is_existing_user(user_id):
+    return r.get(user_id) is not None
+
+
+def get_auth_token(user_id):
+    return r.get(user_id)
+
+
 @dp.message_handler(commands=['start'])
 @dp.message_handler(lambda msg: msg.text.lower() in ['start', 'Start'])
 async def cmd_start(message: types.Message, state: FSMContext):
-    """
-    Conversation's entry point
-    """
-    # TODO: check is user exits else create new user
+
+    if is_existing_user(message.from_user.id):
+        token = get_auth_token(message.from_user.id)
+    else:
+        await BotStates.sign_in.set()
+        reply_markup = get_keyboard_markup(['отмена'])
+        return await bot.send_message(chat_id=message.chat.id, text='Введите логин и пароль\nв фомате:\n"логин:пароль"',
+                                      reply_markup=reply_markup)
+
+    async with state.proxy() as data:
+        data['token'] = token
 
     reply_markup = get_start_menu()
-
     await BotStates.start.set()
 
     await bot.send_message(chat_id=message.chat.id, text='Выберите операцию', reply_markup=reply_markup)
+
+
+@dp.message_handler(lambda msg: msg.text.lower() not in ['отмена'], state=BotStates.sign_in)
+async def sign_in_handler(message: types.Message, state: FSMContext):
+    username, password = message.text.split(':')
+    token = sign_in(username, password)
+    if token:
+        r.set(message.from_user.id, token)
+        reply_markup = get_start_menu()
+        await BotStates.start.set()
+
+        await bot.send_message(chat_id=message.chat.id, text=f'Выберите операцию\n{token}', reply_markup=reply_markup)
+    else:
+        await bot.send_message(chat_id=message.chat.id, text='Введите логин и пароль\nв фомате:\n"логин:пароль"')
 
 
 @dp.message_handler(state='*', commands=['cancel'])
@@ -133,7 +174,6 @@ async def cancel_handler(message: types.Message, state: FSMContext, raw_state: O
 
 @dp.message_handler(lambda msg: msg.text.lower() == 'просмотреть остаток на счёте', state=BotStates.start)
 async def process_balance(message: types.Message, state: FSMContext):
-
     # TODO: send request for balance for this user
 
     await bot.send_message(chat_id=message.chat.id, text='остаток')
@@ -141,7 +181,6 @@ async def process_balance(message: types.Message, state: FSMContext):
 
 @dp.message_handler(lambda msg: msg.text == 'Добавить расходы', state=BotStates.start)
 async def process_income(message: types.Message, state: FSMContext):
-
     reply_markup = get_accounts_keyboard_markup(message.from_user)
     await BotStates.details.set()
 
@@ -152,8 +191,7 @@ async def process_income(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(lambda msg: msg.text == 'Добавить доходы', state=BotStates.start)
-async def process_expanses(message: types.Message, state: FSMContext=None):
-
+async def process_expanses(message: types.Message, state: FSMContext = None):
     # TODO: next step
     await BotStates.details.set()
 
@@ -166,10 +204,8 @@ async def process_expanses(message: types.Message, state: FSMContext=None):
 
 @dp.message_handler(lambda msg: msg.text in get_accounts(msg.from_user), state=BotStates.details)
 async def process_account(message: types.Message, state: FSMContext):
-    reply_markup = get_accounts_keyboard_markup(message.from_user)
-
     async with state.proxy() as data:
-        data['account'] = get_account_id(message.text)
+        data['account'] = get_account_id(message.text, message.from_user)
 
     await BotStates.amount.set()
 
@@ -183,7 +219,7 @@ async def process_amount(message: types.Message, state: FSMContext):
         amount = locale.atof(message.text)
 
         async with state.proxy() as data:
-            data['ammount'] = amount
+            data['amount'] = amount
 
         await BotStates.description.set()
 
@@ -199,13 +235,15 @@ async def process_description(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         if message.text != 'skip':
             data['description'] = message.text
+        else:
+            data['description'] = ''
         opp_type = data['opp']
 
     await BotStates.category.set()
 
     reply_markup = get_category_keyboard_markup(message.from_user, opp_type)
 
-    await bot.send_message(chat_id=message.chat.id, text='Выберите группу (если нет нужной, просто введите ее):',
+    await bot.send_message(chat_id=message.chat.id, text='Выберите категорию (если нет нужной, просто введите ее):',
                            reply_markup=reply_markup)
 
 
@@ -214,12 +252,13 @@ async def process_category(message: types.Message, state: FSMContext):
     if message.text != 'skip':
         async with state.proxy() as data:
             opp_type = data['opp']
-            data['category'] = get_category_id(message.text, opp_type)
+            data['category'] = get_category_id(message.text, opp_type, message.from_user)
 
     await BotStates.date.set()
 
     reply_markup = get_keyboard_markup(['skip', 'Отмена'])
-    await bot.send_message(chat_id=message.chat.id, text='Дата совершения операции YYYY-MM-DD(автоматически подставиться сегодня):',
+    await bot.send_message(chat_id=message.chat.id,
+                           text='Дата совершения операции YYYY-MM-DD(автоматически подставиться сегодня):',
                            reply_markup=reply_markup)
 
 
@@ -230,8 +269,24 @@ async def process_date(message: types.Message, state: FSMContext, raw_state: Opt
             data['date'] = message.text
 
     # TODO: send request for create record in BD
-
-    message = await bot.send_message(chat_id=message.chat.id, text='Запись создана!')
+    res = {}
+    token = get_token_from_redis(message.from_user)
+    async with state.proxy() as data:
+        for key, value in data.items():
+            if key in ['account',
+                       'amount',
+                       'date',
+                       'description',
+                       'group']:
+                res[key] = value
+        if data['opp'] == EXPENSE:
+            res = create_expense(token, res)
+        elif data['opp'] == INCOME:
+            res = create_income(token, res)
+    if res:
+        message = await bot.send_message(chat_id=message.chat.id, text='Запись создана!')
+    else:
+        message = await bot.send_message(chat_id=message.chat.id, text='Запись НЕ создана!')
     return await cancel_handler(message=message, state=state, raw_state=raw_state)
 
 
@@ -241,21 +296,6 @@ def is_float(number: str):
     except ValueError:
         return False
     return True
-
-
-@dp.message_handler(lambda message: is_float(message.text), state=BotStates.amount)
-async def process_amount(message: types.Message, state: FSMContext):
-    pass
-
-
-@dp.message_handler(state=BotStates.category)
-async def process_category(message: types.Message, state: FSMContext):
-    pass
-
-
-@dp.message_handler(state=BotStates.date)
-async def process_date(message: types.Message, state: FSMContext):
-    pass
 
 
 if __name__ == '__main__':
