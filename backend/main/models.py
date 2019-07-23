@@ -19,9 +19,9 @@ class Category(models.Model):
         (EXPENSE, 'Expense')
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
     category_type = models.CharField(max_length=1, choices=CATEGORY_TYPE_CHOICES)
-    description = models.CharField(max_length=255)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class BaseRecord(models.Model):

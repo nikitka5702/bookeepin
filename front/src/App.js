@@ -1,33 +1,47 @@
-import React, {Component, Fragment} from 'react'
+import React, { Component } from 'react'
 
-import 'materialize-css/dist/css/materialize.min.css'
-import 'materialize-css/dist/js/materialize'
-import M from 'materialize-css/dist/js/materialize'
+import { Layout, Icon } from 'antd'
 
-import Header from './components/layout/Header'
-import Footer from './components/layout/Footer'
+import NavRouterMenu from './components/layout/NavRouterMenu'
 import Router from './Router'
 
 import './App.css'
 
+
+const { Header, Sider } = Layout
+
 class App extends Component {
-  componentDidMount() {
-    M.AutoInit()
+  state = {
+    collapsed: false
   }
+
+  toggleCollapsed = () => this.setState({collapsed: !this.state.collapsed})
 
   render() {
     return (
-      <Fragment>
-        <header>
-          <Header/>
-        </header>
-        <main>
+      <Layout>
+        <Sider 
+          trigger={null} 
+          collapsible 
+          collapsed={this.state.collapsed}
+          style={{
+            height: '100vh'
+          }}
+        >
+          <div className="logo" />
+          <NavRouterMenu />
+        </Sider>
+        <Layout>
+          <Header style={{background: '#fff', padding: 0}}>
+            <Icon
+              className="trigger"
+              type={this.state.collapsed ? 'menu-unfold': 'menu-fold'}
+              onClick={this.toggleCollapsed}
+            />
+          </Header>
           <Router {...this.props} />
-        </main>
-        <footer className={"page-footer"}>
-          <Footer/>
-        </footer>
-      </Fragment>
+        </Layout>
+      </Layout>
     )
   }
 }
