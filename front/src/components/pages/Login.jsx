@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Formik, ErrorMessage } from 'formik'
-import { Icon, Layout } from 'antd'
+import { Icon, Layout, Alert, Row, Col } from 'antd'
 import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
 import { Mutation } from 'react-apollo'
@@ -43,7 +43,7 @@ export default class Login extends Component {
             this.props.history.push('/')
           }}
         >
-          {(tokenAuth, {data}) => (
+          {(tokenAuth, { data, error }) => (
             <Formik
               initialValues={{username: '', password: ''}}
               validationSchema={SignInSchema}
@@ -54,23 +54,29 @@ export default class Login extends Component {
               }}
               render={({errors, status, touched, isSubmitting}) => (
                 <Form>
-                  <Form.Item>
-                    <Input
-                      prefix={<Icon type="user" style={{color: 'rgba(0,0,0,.25)'}} />} 
-                      name="username"
-                      placeholder="Username"
-                    />
-                    <ErrorMessage name="username" />
-                  </Form.Item>
-                  <Form.Item>
-                    <Input.Password
-                      prefix={<Icon type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />}
-                      name="password"
-                      placeholder="Password"
-                    />
-                    <ErrorMessage name="password" />
-                  </Form.Item>
-                  <SubmitButton>Login</SubmitButton>
+                  <Row type="flex" justify="center">
+                    <Col span={8}>
+                      <Form.Item>
+                        <Input
+                          prefix={<Icon type="user" style={{color: 'rgba(0,0,0,.25)'}} />} 
+                          name="username"
+                          placeholder="Username"
+                        />
+                        <ErrorMessage name="username" />
+                      </Form.Item>
+                      <Form.Item>
+                        <Input.Password
+                          prefix={<Icon type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                          name="password"
+                          placeholder="Password"
+                        />
+                        <ErrorMessage name="password" />
+                      </Form.Item>
+                      <SubmitButton>Login</SubmitButton>
+                      <br/><br/>
+                      {error ? error.graphQLErrors.map(({ message }, i) => <Alert key={i} message={message} type="error" />) : ''}
+                    </Col>
+                  </Row>
                 </Form>
               )}
             />

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Formik, ErrorMessage } from 'formik'
-import { Layout } from 'antd'
+import { Layout, Alert, Col, Row } from 'antd'
 import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
 import {Mutation} from 'react-apollo'
@@ -9,13 +9,13 @@ import * as Yup from 'yup'
 const { Content } = Layout
 
 const CREATE_USER = gql`
-    mutation CreateUser($username: String!, $email: String!, $password: String!) {
-        createUser(username: $username, email: $email, password: $password) {
-            user {
-                id
-            }
-        }
+mutation CreateUser($username: String!, $email: String!, $password: String!) {
+  createUser(username: $username, email: $email, password: $password) {
+    user {
+      id
     }
+  }
+}
 `
 
 const SignUpSchema = Yup.object().shape({
@@ -50,7 +50,7 @@ export default class Register extends Component {
           }}
           errors
         >
-          {(createUser, {data}) => (
+          {(createUser, { data, error }) => (
             <Formik
               initialValues={{username: '', email: '', password: '', passwordConfirm: ''}}
               validationSchema={SignUpSchema}
@@ -61,35 +61,53 @@ export default class Register extends Component {
               }}
               render={({errors, status, touched, isSubmitting}) => (
                 <Form>
-                  <Form.Item>
-                    <Input
-                      name="username"
-                      placeholder="Username"
-                    />
-                    <ErrorMessage name="username" />
-                  </Form.Item>
-                  <Form.Item>
-                    <Input
-                      name="email"
-                      placeholder="Email"
-                    />
-                    <ErrorMessage name="email" />
-                  </Form.Item>
-                  <Form.Item>
-                    <Input.Password
-                      name="password"
-                      placeholder="Password"
-                    />
-                    <ErrorMessage name="password" />
-                  </Form.Item>
-                  <Form.Item>
-                    <Input.Password
-                      name="passwordConfirm"
-                      placeholder="Confirm Password"
-                    />
-                    <ErrorMessage name="passwordConfirm" />
-                  </Form.Item>
-                  <SubmitButton>Register</SubmitButton>
+                  <Row type="flex" justify="center" gutter={16}>
+                    <Col span={6}>
+                      <Form.Item>
+                        <Input
+                          name="username"
+                          placeholder="Username"
+                        />
+                        <ErrorMessage name="username" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                      <Form.Item>
+                        <Input
+                          name="email"
+                          placeholder="Email"
+                        />
+                        <ErrorMessage name="email" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row type="flex" justify="center" gutter={16}>
+                    <Col span={6}>
+                      <Form.Item>
+                        <Input.Password
+                          name="password"
+                          placeholder="Password"
+                        />
+                        <ErrorMessage name="password" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                      <Form.Item>
+                        <Input.Password
+                          name="passwordConfirm"
+                          placeholder="Confirm Password"
+                        />
+                        <ErrorMessage name="passwordConfirm" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row type="flex" justify="center">
+                    <Col span={12}>
+                      <SubmitButton>Register</SubmitButton>
+                      <br/><br/>
+                      {error ? error.graphQLErrors.map(({ message }, i) => <Alert key={i} message={message} type="error" />) : ''}
+                    </Col>
+                  </Row>
                 </Form>
               )}
             />

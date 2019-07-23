@@ -1,7 +1,7 @@
 import graphene
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
@@ -30,7 +30,7 @@ class ExpenseType(DjangoObjectType):
 class CategoryType(DjangoObjectType):
     class Meta:
         model = Category
-        only_fields = ('id', 'user', 'category_type', 'description')
+        only_fields = ('id', 'name', 'category_type', 'user')
 
 
 class AccountType(DjangoObjectType):
@@ -53,7 +53,10 @@ class CreateUser(graphene.Mutation):
             email=email
         )
         user.set_password(password)
-        user.save()
+        try:
+            user.save()
+        except IntegrityError:
+            raise GraphQLError('User with given credentials already exists')
 
         return CreateUser(user=user)
 
@@ -387,7 +390,9 @@ class Query(graphene.ObjectType):
             raise GraphQLError('You must be logged in!')
 
         if search:
-            search = Q(description=search)
+            search = Q(description=search) & Q(account__user=user)
+        else:
+            search = Q(account__user=user)
 
         return IncomeQueryType(*_get_qs(Income, search, first, skip))
 
@@ -397,7 +402,9 @@ class Query(graphene.ObjectType):
             raise GraphQLError('You must be logged in!')
 
         if search:
-            search = Q(description=search)
+            search = Q(description=search) & Q(account__user=user)
+        else:
+            search = Q(account__user=user)
 
         return ExpenseQueryType(*_get_qs(Expense, search, first, skip))
 
@@ -416,9 +423,9 @@ class Query(graphene.ObjectType):
             raise GraphQLError('You must be logged in!')
 
         if search:
-            search = Q(category_type=category_type) & Q(description=search)
+            search = Q(category_type=category_type) & Q(description=search) & Q(user=user)
         else:
-            search = Q(category_type=category_type)
+            search = Q(category_type=category_type) & Q(user=user)
 
         return CategoryQueryType(*_get_qs(Category, search, first, skip))
 
