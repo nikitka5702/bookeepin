@@ -6,7 +6,7 @@ import gql from 'graphql-tag'
 import { Query, Mutation } from 'react-apollo'
 import * as Yup from 'yup'
 
-import Income from '../layout/Income'
+import Records from '../layout/Records'
 
 const { Content } = Layout
 
@@ -22,21 +22,14 @@ query {
 `
 
 const TOTAL_INCOMES = gql`
-query TotalIncomes($search: String, $first: Int!, $skip: Int!) {
-  totalIncomes(search: $search, first: $first, skip: $skip) {
+query TotalIncomes($accountId: Int!, $search: String, $first: Int!, $skip: Int!) {
+  totalIncomes(accountId: $accountId, search: $search, first: $first, skip: $skip) {
     incomes {
       id
-      account {
-        id
-        amount
-        description
-      }
       description
       amount
       date
       group {
-        id
-        categoryType
         name
       }
     }
@@ -45,18 +38,70 @@ query TotalIncomes($search: String, $first: Int!, $skip: Int!) {
 }
 `
 
+const CREATE_INCOME = gql`
+mutation CreateIncome($accountId: Int!, $description: String!, $amount: Int!, $date: Date!, $groupId: Int!) {
+  createIncome(account: $accountId, description: $description, amount: $amount, date: $date, group: $groupId) {
+    income {
+      id
+    }
+  }
+}
+`
+
+const UPDATE_INCOME = gql`
+mutation UpdateIncome($id: Int!, $incomeData: IncomeInput) {
+  updateIncome(id: $id, incomeData: $incomeData) {
+    income {
+      id
+    }
+  }
+}
+`
+
+const DELETE_INCOME = gql`
+mutation DeleteIncome($id: Int!) {
+  deleteIncome(id: $id) {
+    result
+  }
+}
+`
+
 class Incomes extends Component {
   state = {
-    accountId: 0,
-    page: 1,
-    pageSize: 10
+    accountId: 0
   }
 
-  setPageSize = (_, size) => this.setState({pageSize: size})
-
-  setCurrentPage = page => this.setState({page})
-
   render() {
+    const accountBody = this.state.accountId === 0 ? (
+      <Row type="flex" justify="center" align="middle" style={{height: '100%'}}>
+        <Alert message="Select account" type="info" showIcon/>
+      </Row>
+    ) : (
+      <Records
+        accountId={this.state.accountId}
+        name="Incomes"
+        qname="totalIncomes"
+        query={TOTAL_INCOMES}
+        fields={[
+          ['id'], 
+          ['description'], 
+          ['amount'], 
+          ['date'], 
+          ['name', 'group']
+        ]}
+        mutations={{
+          add: CREATE_INCOME,
+          edit: UPDATE_INCOME,
+          delete: DELETE_INCOME
+        }}
+        validators={{
+          add: Yup.object().shape({}),
+          edit: Yup.object().shape({}),
+          delete: Yup.object().shape({})
+        }}
+      />
+    )
+
     return (
       <Content
         style={{
@@ -70,10 +115,11 @@ class Incomes extends Component {
             <Query
               query={TOTAL_ACCOUNTS}
               pollInterval={5000}
+              fetchPolicy='network-only'
             >
               {({ loading, error, data }) => {
                 if (loading) return (
-                  <Row type="flex" justify="center">
+                  <Row type="flex" justify="center" align="middle" style={{height: '100%'}}>
                     <Spin size="large" />
                   </Row>
                 )
@@ -87,7 +133,7 @@ class Incomes extends Component {
                   <Menu
                     mode="inline"
                     style={{ height: '100%' }}
-                    onClick={({ key }) => console.log(key)}
+                    onClick={({ key }) => this.setState({accountId: Number.parseInt(key)})}
                   >
                     {data.totalAccounts.accounts.map(account => (
                       <Menu.Item key={account.id}>{account.description}</Menu.Item>
@@ -103,7 +149,7 @@ class Incomes extends Component {
               background: '#ccc'
             }}
           >
-            <Income account_id={this.state.accountId} />
+            {accountBody}
           </Content>
         </Layout>
       </Content>

@@ -323,9 +323,10 @@ class DeleteAccount(DeleteMutation):
 
 def _get_qs(model, search=None, first=None, skip=None):
     qs = model.objects.all()
-    total = qs.count()
+
     if search:
         qs = qs.filter(search)
+    total = qs.count()
     if skip:
         qs = qs[skip:]
     if first:
