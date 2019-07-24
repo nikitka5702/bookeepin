@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react'
+import Moment from 'react-moment'
 import { Formik, ErrroMessage } from 'formik'
-import { Layout, Pagination, Spin, Row, Col, Alert, Menu } from 'antd'
+import { Layout, Pagination, Spin, Row, Col, Alert, Menu, Tag } from 'antd'
 import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
 import { Query, Mutation } from 'react-apollo'
@@ -80,14 +81,39 @@ class Incomes extends Component {
       <Records
         accountId={this.state.accountId}
         name="Incomes"
-        qname="totalIncomes"
+        qName="totalIncomes"
+        qObjects="incomes"
         query={TOTAL_INCOMES}
-        fields={[
-          ['id'], 
-          ['description'], 
-          ['amount'], 
-          ['date'], 
-          ['name', 'group']
+        fields={{
+          key: ['id'],
+          description: ['description'],
+          amount: ['amount'],
+          date: ['date'],
+          groupName: ['name', 'group']
+        }}
+        columns={[
+          {
+            title: 'Description',
+            dataIndex: 'description',
+            key: 'description'
+          },
+          {
+            title: 'Amount',
+            dataIndex: 'amount',
+            key: 'amount'
+          },
+          {
+            title: 'Date',
+            dataIndex: 'date',
+            key: 'date',
+            render: date => <Moment>{date}</Moment>
+          },
+          {
+            title: 'Group Name',
+            dataIndex:'groupName',
+            key: 'groupName',
+            render: text => <Tag>{text}</Tag>
+          }
         ]}
         mutations={{
           add: CREATE_INCOME,
@@ -145,8 +171,7 @@ class Incomes extends Component {
           </Layout.Sider>
           <Content
             style={{
-              padding: 24,
-              background: '#ccc'
+              padding: 24
             }}
           >
             {accountBody}

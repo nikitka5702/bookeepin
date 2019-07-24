@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { Formik, ErrroMessage } from 'formik'
-import { Layout, Pagination, Spin, Row, Col, Alert, Menu } from 'antd'
+import { Pagination, Spin, Row, Col, Alert, Table } from 'antd'
 import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
 import { Query, Mutation } from 'react-apollo'
@@ -13,9 +13,11 @@ class Records extends Component {
   static propTypes = {
     accountId: PropTypes.number.isRequired,
     name: PropTypes.string.isRequired,
-    qname: PropTypes.string.isRequired,
+    qName: PropTypes.string.isRequired,
+    qObjects: PropTypes.string.isRequired,
     query: PropTypes.object.isRequired,
-    fields: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.string)).isRequired,
+    fields: PropTypes.objectOf(PropTypes.arrayOf(PropTypes.string)).isRequired,
+    columns: PropTypes.arrayOf(PropTypes.objectOf(PropTypes.string)).isRequired,
     mutations: PropTypes.exact({
       add: PropTypes.object.isRequired,
       edit: PropTypes.object.isRequired,
@@ -34,7 +36,7 @@ class Records extends Component {
   }
 
   render() {
-    const { accountId, name, qname, query, fields, mutations } = this.props
+    const { accountId, name, qName, qObjects, query, fields, columns, mutations, validators } = this.props
     const { page, pageSize } = this.state
 
     return (
@@ -60,7 +62,20 @@ class Records extends Component {
               <Row type="flex" justify="center" align="middle" style={{height: '5%'}}>
                 {name}
               </Row>
-              <Row type="flex" justify="center" align="middle" style={{height: '85%'}}>
+              <Row type="flex" justify="center" align="top" style={{height: '85%', width: '100%'}}>
+                <Table
+                  style={{width: '100%'}}
+                  columns={columns} 
+                  pagination={false}
+                  dataSource={data[qName][qObjects].map((value, i) => {
+                    let o = {}
+                    for (let key in fields) {
+                      o[key] = lookup(fields[key], value)
+                    }
+
+                    return o
+                  })}
+                />
               </Row>
               <Row type="flex" justify="center" align="middle" style={{height: '10%'}}>
                 <Pagination
@@ -69,7 +84,7 @@ class Records extends Component {
                   defaultPageSize={pageSize}
                   onShowSizeChange={(_, pageSize) => this.setState({pageSize})}
                   onChange={page => this.setState({page})}
-                  total={data[qname].total}
+                  total={data[qName].total}
                 />
               </Row>
             </Fragment>
