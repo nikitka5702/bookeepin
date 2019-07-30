@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react'
 import Moment from 'react-moment'
 import { Formik, ErrroMessage } from 'formik'
-import { Layout, Pagination, Spin, Row, Col, Alert, Menu, Tag } from 'antd'
+import { Layout, Pagination, Spin, Row, Col, Alert, Menu, Tag, Icon } from 'antd'
 import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
 import { Query, Mutation } from 'react-apollo'
@@ -9,7 +9,7 @@ import * as Yup from 'yup'
 
 import Records from '../layout/Records'
 
-const { Content } = Layout
+const { Content, Header } = Layout
 
 const TOTAL_ACCOUNTS = gql`
 query {
@@ -40,7 +40,7 @@ query TotalIncomes($accountId: Int!, $search: String, $first: Int!, $skip: Int!)
 `
 
 const CREATE_INCOME = gql`
-mutation CreateIncome($accountId: Int!, $description: String!, $amount: Int!, $date: Date!, $groupId: Int!) {
+mutation CreateIncome($accountId: Int!, $description: String!, $amount: Float!, $date: Date!, $groupId: Int!) {
   createIncome(account: $accountId, description: $description, amount: $amount, date: $date, group: $groupId) {
     income {
       id
@@ -95,24 +95,27 @@ class Incomes extends Component {
           {
             title: 'Description',
             dataIndex: 'description',
+            width: Math.floor(document.documentElement.clientWidth * .15),
             key: 'description'
           },
           {
             title: 'Amount',
             dataIndex: 'amount',
+            width: Math.floor(document.documentElement.clientWidth * .10),
             key: 'amount'
           },
           {
             title: 'Date',
             dataIndex: 'date',
+            width: Math.floor(document.documentElement.clientWidth * .15),
             key: 'date',
-            render: date => <Moment>{date}</Moment>
+            render: date => <Moment format="Do MMMM YYYY">{date}</Moment>
           },
           {
             title: 'Group Name',
             dataIndex:'groupName',
             key: 'groupName',
-            render: text => <Tag>{text}</Tag>
+            render: text => <Tag color="purple">{text}</Tag>
           }
         ]}
         mutations={{

@@ -17,7 +17,7 @@ class Records extends Component {
     qObjects: PropTypes.string.isRequired,
     query: PropTypes.object.isRequired,
     fields: PropTypes.objectOf(PropTypes.arrayOf(PropTypes.string)).isRequired,
-    columns: PropTypes.arrayOf(PropTypes.objectOf(PropTypes.string)).isRequired,
+    columns: PropTypes.arrayOf(PropTypes.objectOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.func]))).isRequired,
     mutations: PropTypes.exact({
       add: PropTypes.object.isRequired,
       edit: PropTypes.object.isRequired,
@@ -65,8 +65,11 @@ class Records extends Component {
               <Row type="flex" justify="center" align="top" style={{height: '85%', width: '100%'}}>
                 <Table
                   style={{width: '100%'}}
-                  columns={columns} 
+                  columns={columns}
                   pagination={false}
+                  scroll={{
+                    y: Math.floor(document.documentElement.clientHeight * .61)
+                  }}
                   dataSource={data[qName][qObjects].map((value, i) => {
                     let o = {}
                     for (let key in fields) {

@@ -36,6 +36,7 @@ class NavRouterMenu extends Component {
               <Menu.Item key="3">
                 <Icon type="fall" />
                 <span>Expenses</span>
+                <Link to='expenses' />
               </Menu.Item>
               <Menu.Item key="4">
                 <Icon type="pie-chart" />

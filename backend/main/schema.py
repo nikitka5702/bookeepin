@@ -204,7 +204,7 @@ class UpdateExpense(graphene.Mutation):
 
     class Arguments:
         id = graphene.Int()
-        expense_data = IncomeInput()
+        expense_data = ExpenseInput()
 
     def mutate(self, info, id, expense_data):
         user = info.context.user
