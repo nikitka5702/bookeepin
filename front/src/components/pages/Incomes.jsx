@@ -1,15 +1,10 @@
 import React, { Component, Fragment } from 'react'
 import Moment from 'react-moment'
-import { Formik, ErrroMessage } from 'formik'
-import { Layout, Pagination, Spin, Row, Col, Alert, Menu, Tag, Icon } from 'antd'
-import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
+import { Row, Alert, Tag, Button } from 'antd'
 import gql from 'graphql-tag'
-import { Query, Mutation } from 'react-apollo'
-import * as Yup from 'yup'
 
 import Records from '../layout/Records'
-
-const { Content, Header } = Layout
+import AccountMenu from '../layout/AccountMenu'
 
 const TOTAL_ACCOUNTS = gql`
 query {
@@ -72,6 +67,8 @@ class Incomes extends Component {
     accountId: 0
   }
 
+  setAccountId = accountId => this.setState({accountId})
+
   render() {
     const accountBody = this.state.accountId === 0 ? (
       <Row type="flex" justify="center" align="middle" style={{height: '100%'}}>
@@ -107,80 +104,38 @@ class Incomes extends Component {
           {
             title: 'Date',
             dataIndex: 'date',
-            width: Math.floor(document.documentElement.clientWidth * .15),
+            width: Math.floor(document.documentElement.clientWidth *.15),
             key: 'date',
             render: date => <Moment format="Do MMMM YYYY">{date}</Moment>
           },
           {
             title: 'Group Name',
             dataIndex:'groupName',
+            width: Math.floor(document.documentElement.clientWidth * .20),
             key: 'groupName',
             render: text => <Tag color="purple">{text}</Tag>
+          },
+          {
+            title: 'Edit',
+            dataIndex: 'edit',
+            key: 'edit',
           }
         ]}
-        mutations={{
-          add: CREATE_INCOME,
-          edit: UPDATE_INCOME,
-          delete: DELETE_INCOME
-        }}
-        validators={{
-          add: Yup.object().shape({}),
-          edit: Yup.object().shape({}),
-          delete: Yup.object().shape({})
+        modals={{
+          add: <Fragment />,
+          edit: <Fragment />,
+          delete: <Fragment />
         }}
       />
     )
 
     return (
-      <Content
-        style={{
-          margin: '24px 16px',
-          padding: 24,
-          background: '#fff'
-        }}
+      <AccountMenu
+        query={TOTAL_ACCOUNTS}
+        menuSelect={this.setAccountId}
       >
-        <Layout style={{ height: '100%' }}>
-          <Layout.Sider>
-            <Query
-              query={TOTAL_ACCOUNTS}
-              pollInterval={5000}
-              fetchPolicy='network-only'
-            >
-              {({ loading, error, data }) => {
-                if (loading) return (
-                  <Row type="flex" justify="center" align="middle" style={{height: '100%'}}>
-                    <Spin size="large" />
-                  </Row>
-                )
-                if (error) return (
-                  <Row type="flex" justify="center">
-                    <Alert message={`Error! ${error.message}`} type="error" />
-                  </Row>
-                )
-
-                return (
-                  <Menu
-                    mode="inline"
-                    style={{ height: '100%' }}
-                    onClick={({ key }) => this.setState({accountId: Number.parseInt(key)})}
-                  >
-                    {data.totalAccounts.accounts.map(account => (
-                      <Menu.Item key={account.id}>{account.description}</Menu.Item>
-                    ))}
-                  </Menu>
-                )
-              }}
-            </Query>
-          </Layout.Sider>
-          <Content
-            style={{
-              padding: 24
-            }}
-          >
-            {accountBody}
-          </Content>
-        </Layout>
-      </Content>
+        {accountBody}
+      </AccountMenu>
     )
   }
 }

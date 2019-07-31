@@ -1,10 +1,10 @@
 import React, { Component, Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { Formik, ErrroMessage } from 'formik'
-import { Pagination, Spin, Row, Col, Alert, Table } from 'antd'
+import { Pagination, Spin, Row, Col, Alert, Table, Button, Icon } from 'antd'
 import { Form, Input, SubmitButton } from '@jbuschke/formik-antd'
 import gql from 'graphql-tag'
-import { Query, Mutation } from 'react-apollo'
+import { Query } from 'react-apollo'
 import * as Yup from 'yup'
 
 import lookup from '../../helper'
@@ -18,34 +18,40 @@ class Records extends Component {
     query: PropTypes.object.isRequired,
     fields: PropTypes.objectOf(PropTypes.arrayOf(PropTypes.string)).isRequired,
     columns: PropTypes.arrayOf(PropTypes.objectOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.func]))).isRequired,
-    mutations: PropTypes.exact({
-      add: PropTypes.object.isRequired,
-      edit: PropTypes.object.isRequired,
-      delete: PropTypes.object.isRequired
-    }).isRequired,
-    validators: PropTypes.exact({
-      add: PropTypes.instanceOf(Yup.object).isRequired,
-      edit: PropTypes.instanceOf(Yup.object).isRequired,
-      delete: PropTypes.instanceOf(Yup.object).isRequired
+    modals: PropTypes.exact({
+      add: PropTypes.element.isRequired,
+      edit: PropTypes.element.isRequired,
+      delete: PropTypes.element.isRequired
     }).isRequired
   }
 
   state = {
+    selectedRowKeys: [],
     page: 1,
     pageSize: 10
   }
 
+  onSelectChange = selectedRowKeys => this.setState({selectedRowKeys})
+
   render() {
-    const { accountId, name, qName, qObjects, query, fields, columns, mutations, validators } = this.props
-    const { page, pageSize } = this.state
+    const { accountId, name, qName, qObjects, query, fields, columns, modals } = this.props
+    const { selectedRowKeys, page, pageSize } = this.state
+
+    const controls = {edit: modals.edit}
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: this.onSelectChange
+    }
+
+    const hasSelected = selectedRowKeys.length > 0
 
     return (
       <Query
         query={query}
         variables={{accountId: accountId, first: pageSize, skip: (page - 1) * pageSize}}
-        pollInterval={5000}
+        pollInterval={10000}
       >
-        {({ loading, error, data }) => {
+        {({ loading, error, data, refetch }) => {
           if (loading) return (
             <Row type="flex" justify="center" align="middle" style={{height: '100%'}}>
               <Spin size="large" />
@@ -62,16 +68,28 @@ class Records extends Component {
               <Row type="flex" justify="center" align="middle" style={{height: '5%'}}>
                 {name}
               </Row>
-              <Row type="flex" justify="center" align="top" style={{height: '85%', width: '100%'}}>
+              <Row type="flex" justify="start" align="middle" style={{height: '10%'}}>
+                <Button.Group>
+                  <Button type="primary" icon="plus">
+                    Add
+                  </Button>
+                  <Button type="danger" disabled={!hasSelected}>
+                    Delete selected
+                    <Icon type="delete" />
+                  </Button>
+                </Button.Group>
+              </Row>
+              <Row type="flex" justify="center" align="top" style={{height: '75%', width: '100%'}}>
                 <Table
                   style={{width: '100%'}}
+                  rowSelection={rowSelection}
                   columns={columns}
                   pagination={false}
                   scroll={{
-                    y: Math.floor(document.documentElement.clientHeight * .61)
+                    y: Math.floor(document.documentElement.clientHeight * .54)
                   }}
                   dataSource={data[qName][qObjects].map((value, i) => {
-                    let o = {}
+                    let o = {...controls}
                     for (let key in fields) {
                       o[key] = lookup(fields[key], value)
                     }
