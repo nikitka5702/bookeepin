@@ -2,3 +2,4 @@ pyyaml
 gql
 aiogram
 redis
+requests
